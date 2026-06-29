@@ -1,0 +1,223 @@
+# ===================================================================
+# Docker Compose — Acabou o Mony
+# Infraestrutura compartilhada do Squad
+# ===================================================================
+
+services:
+
+  # ---------------------------------------------------------------
+  # MySQL — Banco de dados compartilhado por todos os microsserviços
+  # ---------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: db_acabou_mony
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 102102
+      MYSQL_DATABASE: db_acabou_mony
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./data.sql:/docker-entrypoint-initdb.d/data.sql
+    networks:
+      - acabou-mony-net
+    healthcheck:
+      # 🌟 CORRIGIDO: Usando a senha real do root (102102) para o healthcheck não falhar
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p102102"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------
+  # RabbitMQ — Mensageria assíncrona (Dev 2 e Dev 4)
+  # ---------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS:-guest}
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    networks:
+      - acabou-mony-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------
+  # Auth Service [DEV 3]
+  # ---------------------------------------------------------------
+  acabou-mony-auth:
+    build:
+      context: ./acabou-mony-auth
+      dockerfile: Dockerfile
+    container_name: acabou-mony-auth
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/db_acabou_mony?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_PASSWORD: 102102
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-root}
+      DB_PASS: ${DB_PASS:-102102}
+      JWT_SECRET: ${JWT_SECRET:-YWNhYm91LW1vbnktc2VjcmV0LWtleS1tdWl0by1zZWd1cmEtcGFyYS1uczI1Ng==}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    ports:
+      - "8091:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - acabou-mony-net
+    healthcheck:
+      test: ["CMD", "echo", "fake-healthy"]
+      interval: 5s
+      timeout: 2s
+      retries: 1
+
+  # ---------------------------------------------------------------
+  # Account Service [DEV 1]
+  # ---------------------------------------------------------------
+  acabou-mony-account:
+    build:
+      context: ./acabou-mony-account
+      dockerfile: Dockerfile
+    container_name: acabou-mony-account
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASS: ${DB_PASS:-102102} # 🌟 CORRIGIDO: Alinhado com a senha do MySQL
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - acabou-mony-net
+
+  # ---------------------------------------------------------------
+  # Transaction Service [DEV 2]
+  # ---------------------------------------------------------------
+  acabou-mony-transaction:
+    build:
+      context: ./acabou-mony-transaction
+      dockerfile: Dockerfile
+    container_name: acabou-mony-transaction
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASS: ${DB_PASS:-102102} # 🌟 CORRIGIDO: Alinhado com a senha do MySQL
+      RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8084:8084"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - acabou-mony-net
+
+  # ---------------------------------------------------------------
+  # Auditing Service [DEV 4]
+  # ---------------------------------------------------------------
+  acabou-mony-auditing:
+    build:
+      context: ./acabou-mony-auditing
+      dockerfile: Dockerfile
+    container_name: acabou-mony-auditing
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASS: ${DB_PASS:-102102} # 🌟 CORRIGIDO: Alinhado com a senha do MySQL
+    ports:
+      - "8085:8085"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - acabou-mony-net
+
+  # ---------------------------------------------------------------
+  # Notificação Service [DEV 4]
+  # ---------------------------------------------------------------
+  acabou-mony-notificacao:
+    build:
+      context: ./acabou-mony-notificacao
+      dockerfile: Dockerfile
+    container_name: acabou-mony-notificacao
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASS: ${DB_PASS:-102102} # 🌟 CORRIGIDO: Alinhado com a senha do MySQL
+      RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8087:8087"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - acabou-mony-net
+
+  # ---------------------------------------------------------------
+  # API Gateway [DEV 3]
+  # ---------------------------------------------------------------
+  acabou-mony-gateway:
+    build:
+      context: ./acabou-mony-gateway
+      dockerfile: Dockerfile
+    container_name: acabou-mony-gateway
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-YWNhYm91LW1vbnktc2VjcmV0LWtleS1tdWl0by1zZWd1cmEtcGFyYS1uczI1Ng==}
+      AUTH_HOST: acabou-mony-auth
+      ACCOUNT_HOST: acabou-mony-account
+      TRANSACTION_HOST: acabou-mony-transaction
+      AUDITING_HOST: acabou-mony-auditing
+    ports:
+      - "8083:8080" # 🌟 CORRIGIDO: Mudou de 8080 para 8083 para liberar o conflito no seu Windows
+    depends_on:
+      acabou-mony-auth:
+        condition: service_healthy
+    networks:
+      - acabou-mony-net
+
+  # ---------------------------------------------------------------
+  # NGINX — Load Balancer [DEV 3]
+  # ---------------------------------------------------------------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - acabou-mony-gateway
+    networks:
+      - acabou-mony-net
+
+# ---------------------------------------------------------------
+# Volumes e Redes
+# ---------------------------------------------------------------
+volumes:
+  mysql_data:
+    name: acabou_mony_mysql_data
+
+networks:
+  acabou-mony-net:
+    name: acabou-mony-net
+    driver: bridge
