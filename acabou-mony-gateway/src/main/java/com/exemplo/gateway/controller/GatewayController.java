@@ -64,13 +64,17 @@ public class GatewayController {
                     .body("Serviço não encontrado: " + service));
         }
 
-        String fullPath = request.getURI().getRawPath().replace("/api", "");
+                String fullPath = request.getURI().getRawPath().replace("/api", "");
+        
+        // Remove the service name from the path (e.g., /accounts/accounts -> /accounts)
+        String targetPath = fullPath.replaceFirst("^/" + service, "");
 
         System.out.println("FULL PATH: " + fullPath);
+        System.out.println("TARGET PATH: " + targetPath);
         System.out.println("BASE URL: " + baseUrl);
 
         return webClient.method(request.getMethod())
-                .uri(baseUrl + fullPath)
+                .uri(baseUrl + targetPath)
                 .headers(httpHeaders -> httpHeaders.addAll(headers))
                 .body(body == null ? Mono.empty() : body, String.class)
                 .retrieve()
