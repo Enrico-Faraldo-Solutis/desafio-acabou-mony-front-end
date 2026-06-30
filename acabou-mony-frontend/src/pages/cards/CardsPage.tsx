@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { cardSchema, type CardFormData } from "../../schemas/card.schema"
 import { useCardsByAccount, useCreateCard, useToggleCardStatus } from "../../hooks/useCards"
-import { useAccounts } from "../../hooks/useAccounts"
+import { useAccountsByUser } from "../../hooks/useAccounts"
+import { useAuthStore } from "../../store/auth.store"
 import { Header } from "../../components/layout/Header"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -31,7 +32,8 @@ import {
 
 export function CardsPage() {
   const [selectedContaId, setSelectedContaId] = useState<number | null>(null)
-  const { data: accountsData } = useAccounts()
+  const usuarioId = useAuthStore((s) => s.usuarioId)
+  const { data: accountsData } = useAccountsByUser(usuarioId)
   const { data: cards, isLoading } = useCardsByAccount(selectedContaId)
   const createCardMutation = useCreateCard()
   const toggleStatusMutation = useToggleCardStatus()
@@ -46,7 +48,15 @@ export function CardsPage() {
   })
 
   function onCreateCard(data: CardFormData) {
-    createCardMutation.mutate(data as { contaId: number; nomeImpresso: string }, { onSuccess: () => reset() })
+    createCardMutation.mutate(
+      { 
+        contaId: Number(data.contaId), 
+        nomeImpresso: data.nomeImpresso 
+      }, 
+      { 
+        onSuccess: () => reset() 
+      }
+    )
   }
 
   return (
@@ -66,7 +76,7 @@ export function CardsPage() {
                 options={
                   accountsData?.content.map((a) => ({
                     value: String(a.id),
-                    label: `Conta #${a.id} - ${a.usuarioId}`,
+                    label: `Conta #${a.id}`,
                   })) ?? []
                 }
                 placeholder="Selecione uma conta"
@@ -132,17 +142,18 @@ export function CardsPage() {
             <form onSubmit={handleSubmit(onCreateCard)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="contaId">Conta</Label>
-                <Select
+                <select
                   id="contaId"
-                  options={
-                    accountsData?.content.map((a) => ({
-                      value: String(a.id),
-                      label: `Conta #${a.id}`,
-                    })) ?? []
-                  }
-                  placeholder="Selecione"
-                  {...register("contaId", { valueAsNumber: true })}
-                />
+                  className="flex h-9 w-full rounded-md border border-neutral-300 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("contaId")}
+                >
+                  <option value="">Selecione</option>
+                  {accountsData?.content.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      Conta #{a.id}
+                    </option>
+                  ))}
+                </select>
                 {errors.contaId && (
                   <p className="text-xs text-red-600">{errors.contaId.message}</p>
                 )}

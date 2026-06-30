@@ -48,10 +48,11 @@ public class GatewayController {
             @RequestBody(required = false) Mono<String> body,
             ServerHttpRequest request) {
 
-        // Mapeia o segmento da URL para a URL base do microsserviço correspondente
+                // Mapeia o segmento da URL para a URL base do microsserviço correspondente
         String baseUrl = switch (service) {
             case "auth"         -> authUrl;
             case "accounts"     -> accountUrl;
+            case "users"        -> accountUrl;  // users também vai para account service
             case "cards"        -> cardUrl;
             case "transactions" -> transactionUrl;
             case "auditing"     -> auditingUrl;
@@ -64,10 +65,11 @@ public class GatewayController {
                     .body("Serviço não encontrado: " + service));
         }
 
-                String fullPath = request.getURI().getRawPath().replace("/api", "");
+                        // Extract the full path after /api/ (e.g., /api/auth/login -> /auth/login)
+        String fullPath = request.getURI().getRawPath().replace("/api", "");
         
-        // Remove the service name from the path (e.g., /accounts/accounts -> /accounts)
-        String targetPath = fullPath.replaceFirst("^/" + service, "");
+        // Keep the full path including the service name
+        String targetPath = fullPath;
 
         System.out.println("FULL PATH: " + fullPath);
         System.out.println("TARGET PATH: " + targetPath);

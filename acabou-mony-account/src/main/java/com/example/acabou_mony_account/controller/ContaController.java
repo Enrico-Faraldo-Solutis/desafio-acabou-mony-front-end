@@ -32,11 +32,20 @@ public class ContaController {
         return ResponseEntity.ok(contaAtualizada);
     }
 
-    @GetMapping
+        @GetMapping
     public ResponseEntity<Page<ContaResponseDto>> listarTodasContas(
             @PageableDefault(page = 0, size = 10, sort = "id") Pageable pageable) {
 
         Page<ContaResponseDto> contas = contaService.listarTodasContas(pageable);
+        return ResponseEntity.ok(contas);
+    }
+
+    @GetMapping("/user/{usuarioId}")
+    public ResponseEntity<Page<ContaResponseDto>> listarContasPorUsuario(
+            @PathVariable Long usuarioId,
+            @PageableDefault(page = 0, size = 10, sort = "id") Pageable pageable) {
+
+        Page<ContaResponseDto> contas = contaService.listarContasPorUsuario(usuarioId, pageable);
         return ResponseEntity.ok(contas);
     }
 }

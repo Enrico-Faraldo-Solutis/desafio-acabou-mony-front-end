@@ -1,5 +1,5 @@
 import { useAuthStore } from "../../store/auth.store"
-import { useBalance, useAccounts } from "../../hooks/useAccounts"
+import { useBalance, useAccountsByUser } from "../../hooks/useAccounts"
 import { useTransactionsByAccount } from "../../hooks/useTransactions"
 import { Header } from "../../components/layout/Header"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 
 export function DashboardPage() {
   const usuarioId = useAuthStore((s) => s.usuarioId)
-  const { data: accountsData, isLoading: accountsLoading } = useAccounts()
+  const usuarioNome = useAuthStore((s) => s.usuarioNome)
+  const { data: accountsData, isLoading: accountsLoading } = useAccountsByUser(usuarioId)
 
   const firstAccount = accountsData?.content?.[0]
   const { data: balanceData, isLoading: balanceLoading } = useBalance(firstAccount?.id ?? null)
@@ -59,7 +60,7 @@ export function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">#{firstAccount?.id ?? "-"}</div>
             <p className="mt-1 text-xs text-neutral-500">
-              ID do usuário: {usuarioId}
+              Usuário: {usuarioNome ?? "Carregando..."}
             </p>
           </CardContent>
         </Card>

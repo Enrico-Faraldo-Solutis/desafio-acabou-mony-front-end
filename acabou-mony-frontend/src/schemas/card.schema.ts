@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const cardSchema = z.object({
-  contaId: z.number({ message: "Conta é obrigatória" }),
+  contaId: z.coerce.number({ message: "Conta é obrigatória" }).positive("Selecione uma conta"),
   nomeImpresso: z
     .string()
     .min(2, "Nome impresso deve ter no mínimo 2 caracteres")

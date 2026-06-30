@@ -6,12 +6,12 @@ export async function listAuditLogs(params?: {
   size?: number
   sort?: string
 }): Promise<PageResponse<AuditLogResponse>> {
-  const response = await apiClient.get<PageResponse<AuditLogResponse>>("/auditing/auditing", { params })
+  const response = await apiClient.get<PageResponse<AuditLogResponse>>("/auditing", { params })
   return response.data
 }
 
 export async function getAuditLog(id: number): Promise<AuditLogResponse> {
-  const response = await apiClient.get<AuditLogResponse>(`/auditing/auditing/${id}`)
+  const response = await apiClient.get<AuditLogResponse>(`/auditing/${id}`)
   return response.data
 }
 
@@ -20,7 +20,7 @@ export async function getAuditLogsByUser(
   params?: { page?: number; size?: number },
 ): Promise<PageResponse<AuditLogResponse>> {
   const response = await apiClient.get<PageResponse<AuditLogResponse>>(
-    `/auditing/auditing/usuario/${usuarioId}`,
+    `/auditing/usuario/${usuarioId}`,
     { params },
   )
   return response.data
@@ -31,7 +31,7 @@ export async function getAuditLogsByAction(
   params?: { page?: number; size?: number },
 ): Promise<PageResponse<AuditLogResponse>> {
   const response = await apiClient.get<PageResponse<AuditLogResponse>>(
-    `/auditing/auditing/acao/${acao}`,
+    `/auditing/acao/${acao}`,
     { params },
   )
   return response.data
@@ -43,7 +43,7 @@ export async function getAuditLogsByEntity(
   params?: { page?: number; size?: number },
 ): Promise<PageResponse<AuditLogResponse>> {
   const response = await apiClient.get<PageResponse<AuditLogResponse>>(
-    "/auditing/auditing/entidade",
+    "/auditing/entidade",
     { params: { nome, id, ...params } },
   )
   return response.data

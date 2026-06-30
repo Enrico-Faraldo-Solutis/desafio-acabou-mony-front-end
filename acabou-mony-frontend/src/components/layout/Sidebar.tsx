@@ -2,7 +2,6 @@ import { NavLink } from "react-router-dom"
 import { cn } from "../../lib/utils"
 import {
   LayoutDashboard,
-  Users,
   Building2,
   CreditCard,
   ArrowLeftRight,
@@ -14,7 +13,6 @@ import { useAuthStore } from "../../store/auth.store"
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/accounts", label: "Contas", icon: Building2 },
-  { to: "/users", label: "Usuários", icon: Users },
   { to: "/cards", label: "Cartões", icon: CreditCard },
   { to: "/transactions", label: "Transações", icon: ArrowLeftRight },
   { to: "/auditing", label: "Auditoria", icon: ScrollText },

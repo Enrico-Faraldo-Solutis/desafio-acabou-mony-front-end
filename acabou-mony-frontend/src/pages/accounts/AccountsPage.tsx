@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { useAccounts } from "../../hooks/useAccounts"
+import { useAccountsByUser } from "../../hooks/useAccounts"
+import { useAuthStore } from "../../store/auth.store"
 import { Header } from "../../components/layout/Header"
 import {
   Card,
@@ -23,24 +24,24 @@ import {
 
 export function AccountsPage() {
   const [page, setPage] = useState(0)
-  const { data, isLoading } = useAccounts(page)
+  const usuarioId = useAuthStore((s) => s.usuarioId)
+  const { data, isLoading } = useAccountsByUser(usuarioId, page)
 
   if (isLoading) return <LoadingSpinner />
 
   return (
     <div>
-      <Header title="Contas" description="Gerenciamento de contas bancárias" />
+      <Header title="Minhas Contas" description="Gerenciamento das suas contas bancárias" />
 
       <Card>
         <CardHeader>
-          <CardTitle>Todas as Contas</CardTitle>
+          <CardTitle>Minhas Contas</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
-                <TableHead>Usuário</TableHead>
                 <TableHead>Saldo</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Criação</TableHead>
@@ -50,7 +51,6 @@ export function AccountsPage() {
               {data?.content.map((account) => (
                 <TableRow key={account.id}>
                   <TableCell>{account.id}</TableCell>
-                  <TableCell>{account.usuarioId}</TableCell>
                   <TableCell>
                     <CurrencyDisplay value={account.saldo} />
                   </TableCell>
@@ -63,11 +63,13 @@ export function AccountsPage() {
             </TableBody>
           </Table>
 
-          <Pagination
-            page={page}
-            totalPages={data?.totalPages ?? 0}
-            onPageChange={setPage}
-          />
+          {data && data.totalPages > 1 && (
+            <Pagination
+              page={page}
+              totalPages={data.totalPages}
+              onPageChange={setPage}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

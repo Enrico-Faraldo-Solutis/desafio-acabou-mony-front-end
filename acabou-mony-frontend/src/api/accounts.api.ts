@@ -6,11 +6,20 @@ export async function listAccounts(params?: {
   size?: number
   sort?: string
 }): Promise<PageResponse<AccountResponse>> {
-  const response = await apiClient.get<PageResponse<AccountResponse>>("/accounts/accounts", { params })
+  const response = await apiClient.get<PageResponse<AccountResponse>>("/accounts", { params })
+  return response.data
+}
+
+export async function listAccountsByUser(usuarioId: number, params?: {
+  page?: number
+  size?: number
+  sort?: string
+}): Promise<PageResponse<AccountResponse>> {
+  const response = await apiClient.get<PageResponse<AccountResponse>>(`/accounts/user/${usuarioId}`, { params })
   return response.data
 }
 
 export async function getBalance(contaId: number): Promise<AccountResponse> {
-  const response = await apiClient.get<AccountResponse>(`/accounts/accounts/balance/${contaId}`)
+  const response = await apiClient.get<AccountResponse>(`/accounts/balance/${contaId}`)
   return response.data
 }

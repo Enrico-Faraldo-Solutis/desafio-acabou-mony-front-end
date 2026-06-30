@@ -49,8 +49,13 @@ public class ContaService {
         return contaMapper.toDto(contaAtualizada);
     }
 
-    public Page<ContaResponseDto> listarTodasContas(Pageable pageable) {
+        public Page<ContaResponseDto> listarTodasContas(Pageable pageable) {
         return contaRepository.findAll(pageable)
+                .map(contaMapper::toDto);
+    }
+
+    public Page<ContaResponseDto> listarContasPorUsuario(Long usuarioId, Pageable pageable) {
+        return contaRepository.findByUsuarioId(usuarioId, pageable)
                 .map(contaMapper::toDto);
     }
 }
